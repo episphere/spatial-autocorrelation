@@ -8,18 +8,22 @@ import gaussian from 'https://cdn.jsdelivr.net/npm/gaussian@1.3.0/+esm'
  *
  * @function spatialAutocorrelation
  * @param {Object|Array} spatialData - Spatial data in either GeoJSON format or an array of rows objects.
- * @param {string|function} valueProperty - If a string, denotes the property in each GeoJSON feature or row to use as the value. If a function, it's called on each feature/row and should return the value.
+ * @param {string|function} valueProperty - If a string, denotes the property in each GeoJSON feature or row to use as 
+ * the value. If a function, it's called on each feature/row and should return the value.
  * @param {Object} [options={}] - Optional parameters to configure the analysis.
  * @param {string} [options.method="local_moran_i"] - The spatial autocorrelation method:
  *   - Local: "local_moran_i", "local_geary_c", "getis_ord_g", "getis_ord_g*"
  *   - Global: "moran_i", "geary_c", "getis_ord_general_g"
  * @param {number} [options.permutations=999] - Number of permutations for pseudo p-value calculation.
- * @param {Array} [options.weightTuples] - **Optional** Array defining spatial weights: `[fromId, toId, weight]`. Required if `spatialData` is in row format. If `spatialData` is GeoJSON and this is omitted, equal weights with queen contiguity will be generated.
+ * @param {Array} [options.weightTuples] - **Optional** Array defining spatial weights: `[fromId, toId, weight]`.
+ *  Required if `spatialData` is in row format. If `spatialData` is GeoJSON and this is omitted, equal weights with
+ *  queen contiguity will be generated.
  * @param {string|Object} [options.permutationOutput=null] - Controls output of permutation values:
  *   - null: No permutation information in output
  *   - "values": Array of all statistic values across permutations.
  *   - Object: `{ type: "distribution_estimate", granularity: 10 }` for kernel density estimation.
- * @param {boolean} [options.outputStatisticStatistics=false] - If true, includes mean and standard deviation of permutation values in results.
+ * @param {boolean} [options.outputStatisticStatistics=false] - If true, includes mean and standard deviation of 
+ * permutation values in results.
  * @param {boolean} [options.outputCutoffs=false] - If true, includes critical values in results.
  * @returns {Array} An array of results, where each result represents a location and contains the calculated statistics.
  */
