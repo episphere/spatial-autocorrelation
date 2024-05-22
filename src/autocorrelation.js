@@ -88,7 +88,6 @@ export function spatialAutocorrelation(spatialData, valueProperty, options={}) {
 
     const results = [] 
     for (const spatialRow of spatialRows) {
-      //console.log(feature.id)
       const value = valueIndex.get(spatialRow.id)
       const neighborIdWeightPairs = weightMatrix.getWeightPairs(spatialRow.id)
       const neighborValueWeightPairs = neighborIdWeightPairs.map(([id, w]) => [valueIndex.get(id), w])
@@ -140,9 +139,9 @@ export function spatialAutocorrelation(spatialData, valueProperty, options={}) {
         }
         result.expectedStatistic = d3.mean(permutedStatistics) 
 
-        if (permutationOutput?.type == "distribution_estimate") {
+        if (permutationOutput?.granularity) {
           Object.assign(result, calculatePseudoPvalue(statistic, permutedStatistics, cutoffCount, permutationOutput.granularity))
-        } else if (permutationOutput == "values" || permutationOutput?.type == "values") {
+        } else if (permutationOutput == "values" ) {
           Object.assign(result, calculatePseudoPvalue(statistic, permutedStatistics, cutoffCount, "values"))
         } else {
           Object.assign(result, calculatePseudoPvalue(statistic, permutedStatistics, cutoffCount))
@@ -229,7 +228,7 @@ export function spatialAutocorrelation(spatialData, valueProperty, options={}) {
         permutedStatistics.push(globalCorrelation(permValueIndex))
       }
 
-      if (permutationOutput?.type == "distribution_estimate") {
+      if (permutationOutput?.granularity) {
         Object.assign(result, calculatePseudoPvalue(statistic, permutedStatistics, cutoffCount, permutationOutput.granularity))
       } else if (permutationOutput == "values" || permutationOutput?.type == "values") {
         Object.assign(result, calculatePseudoPvalue(statistic, permutedStatistics, cutoffCount, "values"))
@@ -283,7 +282,6 @@ function equalWeightTuples(neighborPairs) {
 }
 
 function localAutocorrelationAssignLabel(result, pCutoff, method) {
-  console.log(pCutoff, result.p)
   if (result.p < pCutoff) {
     if (method == "local_geary_c") {
       if (result.statistic > result.expectedStatistic) {
@@ -375,7 +373,7 @@ function calculatePseudoPvalue(statistic, permutedStatistics, cutoffCount, distr
 }
 
 
-function estimateDistribution(X, n=50, extent=null) {
+export function estimateDistribution(X, n=50, extent=null) {  
   const normal = gaussian(0,1)
   const h = 0.9 * d3.deviation(X) * X.length ** (-1/5)
   const kernel = kde(X, d => normal.pdf(d), h)
@@ -384,11 +382,29 @@ function estimateDistribution(X, n=50, extent=null) {
     extent = d3.extent(X)
   }
 
-  // Normalize the value scale, takes away the "area under the curve = 1" element, but a good work-around for the 
-  // side by side density plots which will have different scales.
-  const points = d3.range(...extent, (extent[1]-extent[0])/n).map((d,i) => [d, kernel(d)])
-  const max = d3.max(points, d => d[1])
-  return points.map(([x,y]) => [x, y/max])
+  const threshold = 0.001
+
+  let points = []
+  let step = (extent[1] - extent[0])/n
+  for (let i = 0; i < n; i++) {
+    const x = extent[0] - step*i 
+    const value = kernel(x) 
+    points.push([x,value])
+    if (value < threshold) {
+      break 
+    }
+  }
+  points = points.reverse()
+  for (let i = 1; i < n*2; i++) {
+    const x = extent[0] + step*i 
+    const value = kernel(x) 
+    points.push([x,value])
+    if (value < threshold) {
+      break 
+    }
+  }
+  
+  return points.map(([x,y]) => [x, y])
 }
 
 function kde(X, K, h) {
