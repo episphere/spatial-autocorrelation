@@ -39,6 +39,7 @@ export function spatialAutocorrelation(spatialData, valueProperty, options={}) {
     permutationOutput = null,//{granularity: 10},
     outputStatisticStatistics = false,
     outputCutoffs = false,
+    outputNeighborWeights = false,
   } = options
   
   if (!LOCAL_METHOD_SET.has(method) && !GLOBAL_METHOD_SET.has(method)) {
@@ -150,6 +151,10 @@ export function spatialAutocorrelation(spatialData, valueProperty, options={}) {
         } else {
           Object.assign(result, calculatePseudoPvalue(statistic, permutedStatistics, cutoffCount))
         }
+      }
+
+      if (outputNeighborWeights) {
+        result.neighborWeights = weightMatrix.getWeightPairs(result.id)
       }
       results.push(result)
     }
@@ -372,12 +377,14 @@ function calculatePseudoPvalue(statistic, permutedStatistics, cutoffCount, distr
   } else if (distributionSnaps) {
     result.permutationDistribution = estimateDistribution(permutedStatistics, distributionSnaps)
   } 
+  // TODO: Remove
+  result.permutations = permutedStatistics
 
   return result
 }
 
 
-export function estimateDistribution(X, n=50, extent=null) {  
+export function estimateDistribution(X, n=50, extent=null) { 
   const normal = gaussian(0,1)
   const h = 0.9 * d3.deviation(X) * X.length ** (-1/5)
   const kernel = kde(X, d => normal.pdf(d), h)
@@ -387,11 +394,12 @@ export function estimateDistribution(X, n=50, extent=null) {
   }
 
   const threshold = 0.001
+  const midpoint = (extent[1] + extent[0])/2
 
   let points = []
   let step = (extent[1] - extent[0])/n
   for (let i = 0; i < n; i++) {
-    const x = extent[0] - step*i 
+    const x = midpoint - step*i 
     const value = kernel(x) 
     points.push([x,value])
     if (value < threshold) {
@@ -400,14 +408,14 @@ export function estimateDistribution(X, n=50, extent=null) {
   }
   points = points.reverse()
   for (let i = 1; i < n*2; i++) {
-    const x = extent[0] + step*i 
+    const x = midpoint + step*i 
     const value = kernel(x) 
     points.push([x,value])
     if (value < threshold) {
       break 
     }
   }
-  
+
   return points.map(([x,y]) => [x, y])
 }
 
